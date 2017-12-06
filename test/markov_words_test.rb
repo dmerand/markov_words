@@ -5,10 +5,11 @@ class MarkovWordsTest < Minitest::Test
 
   # We need to ensure that any stored data is toasted between tests.
   def setup
-    ['test.cache', 'test.data'].each do |file|
-      file = "tmp/#{file}"
-      File.delete(file) if File.exist?(file)
-    end
+    clear_test_data_files
+  end
+
+  def teardown
+    clear_test_data_files
   end
 
   def test_that_it_has_a_version_number
@@ -45,7 +46,39 @@ class MarkovWordsTest < Minitest::Test
     assert words.word
   end
 
+  def test_false_cache_has_no_cache_data
+    words = set_words(cache: false)
+    # Cache won't generate until we ask for a word
+    _discard = words.word
+    assert_nil words.cache_store.retrieve_data
+  end
+
+  def test_cache_size_param
+    cache_size = 10
+    words = set_words(cache: true, cache_size: cache_size)
+    # Cache won't generate until we ask for a word
+    _discard = words.word
+    assert_equal words.cache_size, cache_size
+    assert_equal words.cache_store.retrieve_data.length, cache_size - 1
+  end
+
+  def test_cache_refresh
+    cache_size = 10
+    words = set_words(cache: true, cache_size: cache_size)
+    # Cache won't generate until we ask for a word
+    (cache_size / 2).times { _discard = words.word }
+    words.refresh_cache
+    assert_equal words.cache_store.retrieve_data.length, cache_size
+  end
+
   private
+
+  def clear_test_data_files
+    %w{data cache}.each do |suffix|
+      filename = "tmp/test.#{suffix}"
+      File.delete(filename) if File.exist?(filename)
+    end
+  end
 
   # Keep the n-gram size down for testing, because computation is faster that
   # way. We also don't want caching by default (that gets tested specifically).
