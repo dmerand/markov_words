@@ -26,7 +26,73 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+Basic usage is as follows:
+
+```ruby
+require 'markov_words'
+
+words = MarkovWords::Words.new
+# returns a random word
+puts words.word 
+```
+
+You might prefer using a number of n-grams (letter combinations being tracked) higher than the default number (which is 2). We've found that the higher you go, the more accurate words tend to sound, at the expense of having to generate a much larger database of n-gram => letter correspondences. In the case of the default `/usr/share/dict` file, `gram_size = 1` yields a roughly `3.2Kb` database size; `gram_size = 2` yields `3.2Kb`. Once you get up to `gram_size = 8`, you're into ~`30MB` territory, which slows things down a bit. 
+
+To set gram_size:
+
+```ruby
+words = MarkovWords::words.new(gram_size: 8)
+# Will take a while the first time, while the database is created.
+puts words.word 
+```
+
+### Dictionary
+
+By default, `MarkovWords` will use the system dictionary located (on Macs) in `/usr/share/dict/words`. You can change this setting:
+
+```ruby
+# eg to generate random proper names instead of English-sounding words.
+words = MarkovWords::Words.new(corpus_file: '/usr/share/dict/propernames')
+```
+
+This is pretty great, because it means that if you have a dictionary to emulate, you can make words that sound like anything!
+
+### Data Storage
+
+`MarkovWords` stores its database of n-gram concurrences in `Marshal`'ed text files on disk and loads it into memory when necessary. You can control the location of the data file with:
+
+```ruby
+# eg to store the data in /tmp/markov.data
+words = MarkovWords::Words.new(data_file: /tmp/markov.data)
+```
+
+### Caching
+
+Because calculation can get slow, especially at high n-gram sizess, `MarkovWords` will cache 100 words into a `words_ngramsize.cache` file by default. If you want to control caching, you can adjust caching parameters eg:
+
+```ruby
+# For no caching whatsoever
+words = MarkovWords::Words.new(cache: false)
+
+# To change the number of pre-computed/stored words to 1000:
+words = MarkovWords::Words.new(cache_size: 1000)
+
+# To change the location of the cache file to /tmp/markov.cache:
+words = MarkovWords::Words.new(cache_file: '/tmp/markov.cache')
+
+# Of course, options can be combined:
+words = MarkovWords::Words.new(
+  cache_file: '/tmp/markov.cache',
+  cache_size: 1000
+)
+```
+
+Lastly, you can "top off" the cache to make sure it's full with:
+
+```ruby
+words = MarkovWords::Words.new
+words.refresh_cache
+```
 
 ## Development
 
@@ -44,4 +110,4 @@ The gem is available as open source under the terms of the [MIT License](https:/
 
 ## Code of Conduct
 
-Everyone interacting in the MarkovWords project’s codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/[USERNAME]/markov_words/blob/master/CODE_OF_CONDUCT.md).
+Everyone interacting in the MarkovWords project’s codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/exploration/markov_words/blob/master/CODE_OF_CONDUCT.md).
