@@ -3,8 +3,8 @@ require 'securerandom'
 module MarkovWords
   # Utility for persisting arbitrary data to disk as Marshal'ed Ruby objects
   class FileStore
-    attr :file_path
-    attr :data
+    attr_reader :file_path
+    attr_reader :data
 
     # @option opts [String] :file_path Path and name for where the file should
     #   be stored.
@@ -18,14 +18,14 @@ module MarkovWords
     # Store arbitary data into file storage
     # @param data [Object] Any Marshal-able object
     def store_data(data)
-      File.open(@file_path, 'wb') {|f| Marshal.dump(data, f)}
+      File.open(@file_path, 'wb') { |f| Marshal.dump(data, f) }
     end
 
     # Retrieve whatever data is stored in the file + return it
     def retrieve_data
       result = nil
       if File.exist?(@file_path)
-        File.open(@file_path, 'r') {|f| result = Marshal.load(f)}
+        File.open(@file_path, 'r') { |f| result = Marshal.load(f) }
       end
       result
     end
@@ -33,9 +33,7 @@ module MarkovWords
     private
 
     def delete_if_exists(path)
-      if File.exist? path
-        File.delete path
-      end  
+      File.delete path if File.exist? path
     end
   end
 end
