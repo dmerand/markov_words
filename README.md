@@ -36,7 +36,7 @@ words = MarkovWords::Words.new
 puts words.word 
 ```
 
-You might prefer using a number of n-grams (letter combinations being tracked) higher than the default number (which is 2). We've found that the higher you go, the more accurate words tend to sound, at the expense of having to generate a much larger database of n-gram => letter correspondences. In the case of the default `/usr/share/dict` file, `gram_size = 1` yields a roughly `3.2Kb` database size; `gram_size = 2` yields `3.2Kb`. Once you get up to `gram_size = 8`, you're into ~`30MB` territory, which slows things down a bit. 
+You might prefer using a number of n-grams (letter combinations being tracked) higher than the default number (which is 2). We've found that the higher you go, the more accurate words tend to sound, at the expense of having to generate a much larger database of n-gram => letter correspondences. In the case of the default `/usr/share/dict` file, `gram_size = 1` yields a roughly `3.2Kb` database size; `gram_size = 2` yields `18Kb`. Once you get up to `gram_size = 8`, you're into ~`30MB` territory, which slows things down a bit. 
 
 To set gram_size:
 
