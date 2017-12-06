@@ -1,4 +1,5 @@
 # MarkovWords
+[![Gem Version](https://badge.fury.io/rb/markov_words.svg)](https://badge.fury.io/rb/markov_words)
 
 At [EXPLO](https://www.explo.org), we often have a need for specific vocabulary-generators. For example, we might want to make a [password generator](http://lab.explo.org/password), or a Harry Potter house-generator, or some such thing.
 
