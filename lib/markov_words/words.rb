@@ -7,10 +7,14 @@ module MarkovWords
     attr :cache_file
     # How many words you want to store in the cache?
     attr :cache_size
+    # Object for storing + retrieving cache data from persistent storage
+    attr :cache_store
     # Your dictionary of words. Defaults to /usr/share/dict/words.
     attr :corpus_file
     # Where should your database be stored on disk?
     attr :data_file
+    # Object for storing + retrieving n-gram data from persistent storage
+    attr :data_store
     # The database of "grams" (word/count combinations), stored on the disk and
     # loaded into this variable in memory when generating words.
     attr :grams
@@ -30,19 +34,24 @@ module MarkovWords
     #   add to the `opts` hash.
     # @return [Words] A `MarkovWords::Words` object.
     def initialize(opts = {})
+      @grams = nil
       @gram_size = opts.fetch :gram_size, 2
-      @max_length = opts.fetch :max_length, 16
-      @min_length = opts.fetch :min_length, 3
 
       @cache = opts.fetch :cache, true
       @cache_file = opts.fetch :cache_file,
         "tmp/markov_words_#{@gram_size}.cache"
       @cache_size = opts.fetch :cache_size, 70
+      @cache_store = FileStore.new(file_path: @cache_file)
+
       @corpus_file = opts.fetch :corpus_file,
         '/usr/share/dict/words'
+
       @data_file = opts.fetch :data_file,
         "tmp/markov_words_#{@gram_size}.data"
-      @grams = nil
+      @data_store = FileStore.new(file_path: @data_file)
+
+      @max_length = opts.fetch :max_length, 16
+      @min_length = opts.fetch :min_length, 3
     end
 
     # "Top off" the cache of stored words, and ensure that it's at
@@ -50,13 +59,11 @@ module MarkovWords
     # @return [Array<String>] All words in the cache.
     def refresh_cache
       if @cache
-        words_array = load_from_file(@cache_file) || []
-      
+        words_array = @cache_store.retrieve_data
         while words_array.length < @cache_size
           words_array << generate_word
         end
-
-        save_to_file(@cache_file, words_array)
+        @cache_store.store_data words_array
         words_array
       else
         []
@@ -123,22 +130,14 @@ module MarkovWords
       @cache_size.times.map { generate_word }
     end
 
-    def load_from_file(file)
-      result = nil
-      if File.exist?(file)
-        File.open(file, 'r') {|f| result = Marshal.load(f)}
-      end
-      result
-    end
-
     def load_word_from_cache
-      words_array = load_from_file(@cache_file)
+      words_array = @cache_store.retrieve_data
       if words_array.nil? || words_array.empty?
         words_array = generate_words_array 
       end
 
       word = words_array.pop
-      save_to_file(@cache_file, words_array)
+      cache_store.store_data words_array
 
       word
     end
@@ -189,25 +188,17 @@ module MarkovWords
       word.include?("\n")
     end
 
-    # Marshal a Ruby object to file storage
-    def save_to_file(file, data)
-      File.open(file, 'wb') {|f| Marshal.dump(data, f)}
-    end
-
     def set_grams
-      if File.exist? @data_file
-        @grams = load_from_file(@data_file)
-      else
-        @grams = markov_corpus(@corpus_file, @gram_size)
-        save_to_file(@data_file, @grams)
-      end
+      grams = @data_store.retrieve_data ||
+        markov_corpus(@corpus_file, @gram_size)
+      @data_store.store_data grams unless grams == @grams
+      @grams = grams
     end
 
     # Given a @grams entry, update the count of "second" in "first"
     #
-    # Example:
-    #     update_count({"a" => {"b" => 1}}, "a", "b")
-    #     => {"a" => {"b" => 2}}
+    # @example update_count({"a" => {"b" => 1}}, "a", "b")
+    #   => {"a" => {"b" => 2}}
     def update_count(grams, first, second)
       grams[first] = {} if grams[first].nil?
       if grams[first][second].nil?
