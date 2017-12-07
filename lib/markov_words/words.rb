@@ -190,7 +190,7 @@ module MarkovWords
     # In the example hash above, "a" would have a 33% chance of being chosen,
     # while "b" would have a 66% chance (1/2 ratio).
     def pick_random_char(counts_hash)
-      counts_hash ||= {}
+      return nil if counts_hash.nil?
       total = counts_hash.values.sum
       pick_num = SecureRandom.rand(total)
       counter = 0
@@ -201,7 +201,7 @@ module MarkovWords
     end
 
     def line_ending?(word)
-      word.match(/[\r \n]/)
+      /[\r\n]/.match? word
     end
 
     def set_grams
