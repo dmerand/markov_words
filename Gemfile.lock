@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    markov_words (0.2.2)
+    markov_words (0.2.3)
 
 GEM
   remote: https://rubygems.org/
