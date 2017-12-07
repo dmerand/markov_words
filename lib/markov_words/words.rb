@@ -189,7 +189,8 @@ module MarkovWords
     # element from the values hash, accurate to the distribution of counts.
     # In the example hash above, "a" would have a 33% chance of being chosen,
     # while "b" would have a 66% chance (1/2 ratio).
-    def pick_random_char(counts_hash = {})
+    def pick_random_char(counts_hash)
+      counts_hash ||= {}
       total = counts_hash.values.sum
       pick_num = SecureRandom.rand(total)
       counter = 0
@@ -200,7 +201,7 @@ module MarkovWords
     end
 
     def line_ending?(word)
-      word.include?("\n")
+      word.match(/[\r \n]/)
     end
 
     def set_grams
