@@ -8,8 +8,14 @@ Gem::Specification.new do |spec|
   spec.authors = ['Donald Merand']
   spec.email = ['dmerand@explo.org']
 
-  spec.summary = %{Generate words (not sentences) using Markov-chain techniques.}
-  spec.description = %{It's often nice to have random English-sounding words, eg. for password generators. This library uses Markov-chain techniques on words, as opposed to many others which focus on sentences.}
+  spec.summary = <<~SUMMARY
+    Generate words (not sentences) using Markov-chain techniques.}
+  SUMMARY
+  spec.description = <<~DESCRIPTION
+    It's often nice to have random English-sounding words, eg. for password
+    generators. This library uses Markov-chain techniques on words, as opposed
+    to many others which focus on sentences.
+  DESCRIPTION
   spec.homepage = 'https://github.com/exploration/markov_words'
   spec.license = 'MIT'
 
