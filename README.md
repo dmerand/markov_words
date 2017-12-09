@@ -7,8 +7,6 @@ As it turns out, [Markov Chains](http://www.thagomizer.com/blog/2017/11/07/marko
 
 While there are [quite](https://github.com/dabrorius/markov-noodles) a [few](https://github.com/dabrorius/markov-noodles) [wonderful](https://github.com/imikimi/literate_randomizer) Ruby libraries that do this, they all focus either on _actual_ English words, or on creating random _sentences_ but not words. We created this library to do the same thing, but with words, hence the name `MarkovWords`.
 
-
-
 ## Installation
 
 Add this line to your application's Gemfile:
@@ -32,19 +30,19 @@ Basic usage is as follows:
 ```ruby
 require 'markov_words'
 
-words = MarkovWords::Words.new
+generator = MarkovWords::Generator.new
 # returns a random word
-puts words.word 
+puts generator.word 
 ```
 
-You might prefer using a number of n-grams (letter combinations being tracked) higher than the default number (which is 2). We've found that the higher you go, the more accurate words tend to sound, at the expense of having to generate a much larger database of n-gram => letter correspondences. In the case of the default `/usr/share/dict` file, `gram_size = 1` yields a roughly `3.2Kb` database size; `gram_size = 2` yields `18Kb`. Once you get up to `gram_size = 8`, you're into ~`30MB` territory, which slows things down a bit. 
+You might prefer using a number of n-grams (letter combinations being tracked) higher than the default number (which is 2). We've found that the higher you go, the more accurate words tend to sound, as the likelihood that you've started with a partial word the entire length of a word from your dictionary goes up. The increased "real-sounding-ness" comes at the expense of having to generate a much larger database of n-gram => letter correspondences, and accordingly slower access times. 
 
 To set gram_size:
 
 ```ruby
-words = MarkovWords::words.new(gram_size: 8)
+generator = MarkovWords::Generator.new(gram_size: 7)
 # Will take a while the first time, while the database is created.
-puts words.word 
+puts generator.word 
 ```
 
 ### Dictionary
@@ -53,47 +51,57 @@ By default, `MarkovWords` will use the system dictionary located (on Macs) in `/
 
 ```ruby
 # eg to generate random proper names instead of English-sounding words.
-words = MarkovWords::Words.new(corpus_file: '/usr/share/dict/propernames')
+generator = MarkovWords::Generator.new(corpus_file: '/usr/share/dict/propernames')
 ```
 
 This is pretty great, because it means that if you have a dictionary to emulate, you can make words that sound like anything!
 
 ### Data Storage
 
-`MarkovWords` stores its database of n-gram concurrences in `Marshal`'ed text files on disk and loads it into memory when necessary. You can control the location of the data file with:
+`MarkovWords` stores its database of n-gram concurrences on disk and loads it into memory when necessary. You can control the location of the data file with:
 
 ```ruby
 # eg to store the data in /tmp/markov.data
-words = MarkovWords::Words.new(data_file: /tmp/markov.data)
+generator = MarkovWords::Generator.new(data_file: /tmp/markov.data)
 ```
+
+You can also clear out the contents of the data file (because `MarkovWords` will re-use it by default), by passing `flush_data: true`:
+
+```ruby
+# eg to store the data in /tmp/markov.data
+generator = MarkovWords::Generator.new(data_file: /tmp/markov.data, flush_data: true)
+```
+
 
 ### Caching
 
-Because calculation can get slow, especially at high n-gram sizess, `MarkovWords` will cache 100 words into a `words_ngramsize.cache` file by default. If you want to control caching, you can adjust caching parameters eg:
+Because calculation can get slow, especially at high n-gram sizes, `MarkovWords` will cache 100 words by default . If you want to control caching, you can adjust caching parameters eg:
 
 ```ruby
 # For no caching whatsoever
-words = MarkovWords::Words.new(cache: false)
+generator = MarkovWords::Generator.new(perform_caching: false)
 
 # To change the number of pre-computed/stored words to 1000:
-words = MarkovWords::Words.new(cache_size: 1000)
-
-# To change the location of the cache file to /tmp/markov.cache:
-words = MarkovWords::Words.new(cache_file: '/tmp/markov.cache')
-
-# Of course, options can be combined:
-words = MarkovWords::Words.new(
-  cache_file: '/tmp/markov.cache',
-  cache_size: 1000
-)
+generator = MarkovWords::Generator.new(cache_size: 1000)
 ```
 
-Lastly, you can "top off" the cache to make sure it's full with:
+You can "top off" the cache to make sure it's full with:
 
 ```ruby
-words = MarkovWords::Words.new
-words.refresh_cache
+generator = MarkovWords::Generator.new
+generator.refresh_cache
 ```
+
+## Change Log
+
+- `1.0.0` introduced a couple of breaking changes:
+    - `Words` class renamed to `Generator`.
+    - `Generator`:
+        - `cache: [boolean]` parameter was re-named to `perform_caching: [boolean]`.
+        - Removed a lot of `attr_accessor` variables such as `data_store`, `min_length`, `max_length` etc., in favor of a leaner + cleaner API.
+        - The cache file is no longer persisted to disk separately (because `FileStore` is using SQLite instead of direct-disk storage).
+- `0.2.x` was all about Rubocop compliance, so it was a few method refactors but nothing major.
+- `0.1.0` initial commit
 
 ## Development
 

@@ -1,4 +1,6 @@
+# frozen-string-literal: true
+
 module MarkovWords
   # Current version
-  VERSION = '0.2.3'.freeze
+  VERSION = '1.0.0'
 end

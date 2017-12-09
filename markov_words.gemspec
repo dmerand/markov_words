@@ -1,3 +1,5 @@
+# frozen-string-literal: true
+
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require 'markov_words/version'
@@ -32,4 +34,6 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'rake', '~> 10.0'
   spec.add_development_dependency 'sqlite3-ruby', '~> 1.3'
   spec.add_development_dependency 'yard', '~> 0.6'
+
+  spec.required_ruby_version = '~> 2.3'
 end
