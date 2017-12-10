@@ -72,28 +72,72 @@ You can also clear out the contents of the data file (because `MarkovWords` will
 generator = MarkovWords::Generator.new(data_file: /tmp/markov.data, flush_data: true)
 ```
 
+### Custom Metadata
 
-### Caching
+A `Generator` object gives you access to its `.data_store`, which is an instance of a `FileStore` object. This gives you the ability to store custom metadata into the same database that holds the n-gram information.
 
-Because calculation can get slow, especially at high n-gram sizes, `MarkovWords` will cache 100 words by default . If you want to control caching, you can adjust caching parameters eg:
-
-```ruby
-# For no caching whatsoever
-generator = MarkovWords::Generator.new(perform_caching: false)
-
-# To change the number of pre-computed/stored words to 1000:
-generator = MarkovWords::Generator.new(cache_size: 1000)
-```
-
-You can "top off" the cache to make sure it's full with:
+One example of how you might use this would be to cache words for later use (since initial word generation can be slow, even after the database has been generated the first time):
 
 ```ruby
 generator = MarkovWords::Generator.new
-generator.refresh_cache
+my_cache = 100.times.map { generator.word }
+generator.data_store.store_data :cache, my_cache
+
+# then later, perhaps on another page load in a web server...
+my_cache = generator.data_store.retrieve_data :cache
+```
+
+### Benchmarking
+
+We've included a `bin/benchmark` script, which will measure initial load times, and then the time it takes to generate 100 words at various dictionary n-gram sizes.
+
+Here is an example run:
+```
+bin/benchmark 1 6 '/usr/share/dict/words'
+Minimum n-gram size set to 1
+Maximum n-gram size set to 6
+Corpus file set to /usr/share/dict/words
+
+Test initial database creation time versus gram size? (y/n) y
+------------------------------------------------------------
+user     system      total        real
+size: 1   4.080000   0.010000   4.090000 (  4.108898)
+size: 2   8.320000   0.090000   8.410000 (  8.554122)
+size: 3  12.710000   0.080000  12.790000 ( 12.869257)
+size: 4  18.750000   0.160000  18.910000 ( 19.102232)
+size: 5  25.440000   0.250000  25.690000 ( 25.953532)
+size: 6  31.060000   0.340000  31.400000 ( 31.680680)
+------------------------------------------------------------
+
+Test existing database on disk, initial memory load? (y/n) y
+------------------------------------------------------------
+user     system      total        real
+size: 1   0.000000   0.000000   0.000000 (  0.000587)
+size: 2   0.000000   0.000000   0.000000 (  0.005109)
+size: 3   0.080000   0.010000   0.090000 (  0.077303)
+size: 4   0.330000   0.070000   0.400000 (  0.395079)
+size: 5   1.030000   0.130000   1.160000 (  1.157014)
+size: 6   2.920000   0.120000   3.040000 (  3.045219)
+------------------------------------------------------------
+
+Test word generation averages for 100 words per gram size? (y/n) y
+------------------------------------------------------------
+user     system      total        real
+size: 1   0.010000   0.000000   0.010000 (  0.003971)
+size: 2   0.010000   0.000000   0.010000 (  0.009460)
+size: 3   0.120000   0.000000   0.120000 (  0.127297)
+size: 4   0.350000   0.010000   0.360000 (  0.354564)
+size: 5   2.250000   0.020000   2.270000 (  2.302405)
+size: 6   4.000000   0.120000   4.120000 (  4.186757)
+------------------------------------------------------------
 ```
 
 ## Change Log
 
+- `2.0.0`
+    - Breaking changes:
+      - Removed all caching functions from `Generator`. They were cluttering up the code, without being a necessary function of a `Generator`.
+      - Added an `attr_accessor` for `Generator.data_store`, so that users can implement custom metadata for `Generator` objects, and store it in the same `FileStore` object that holds the database.
 - `1.0.0` introduced a couple of breaking changes:
     - `Words` class renamed to `Generator`.
     - `Generator`:
