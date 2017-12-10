@@ -6,25 +6,44 @@ require 'bundler/setup'
 require 'markov_words'
 
 class GeneratorBenchmark
+  LABEL_WIDTH = 7
   def run
-    test_if_desired 'initial setup time versus gram size' do
-      Benchmark.bm(6) do |x|
+    test_if_desired 'initial database creation time versus gram size' do
+      Benchmark.bm(LABEL_WIDTH) do |x|
         @min_gram_size.upto(@max_gram_size) do |size|
-          generator = MarkovWords::Generator.new(flush_data: true,
-                                                 gram_size: size)
+          generator = 
+            MarkovWords::Generator.new(flush_data: true,
+                                       gram_size: size,
+                                       corpus_file: @corpus_file)
           x.report("size: #{size}") { generator.word }
         end
       end
     end
 
-    test_if_desired 'word generation averages for 100 words per gram size' do
-      Benchmark.bm(6) do |x|
+    test_if_desired 'existing database on disk, initial memory load' do
+      Benchmark.bm(LABEL_WIDTH) do |x|
         @min_gram_size.upto(@max_gram_size) do |size|
-          generator = MarkovWords::Generator.new(
-                        flush_data: true,
-                        gram_size: size,
-                        perform_caching: false
-                      )
+          generator = 
+            MarkovWords::Generator.new(flush_data: true,
+                                       gram_size: size,
+                                       corpus_file: @corpus_file)
+          _word = generator.word # this will run initial setup
+          generator_load_data_from_file = 
+            MarkovWords::Generator.new(gram_size: size,
+                                       corpus_file: @corpus_file)
+          x.report("size: #{size}") { generator_load_data_from_file.word }
+        end
+      end
+    end
+
+    test_if_desired 'word generation averages for 100 words per gram size' do
+      Benchmark.bm(LABEL_WIDTH) do |x|
+        @min_gram_size.upto(@max_gram_size) do |size|
+          generator = 
+            MarkovWords::Generator.new(flush_data: true,
+                                       gram_size: size,
+                                       perform_caching: false,
+                                       corpus_file: @corpus_file)
           _word = generator.word # this will run initial setup
           x.report("size: #{size}") { 1.upto(100) { generator.word } }
         end
@@ -35,8 +54,10 @@ class GeneratorBenchmark
   def initialize(opts)
     @min_gram_size = opts.fetch :min_gram_size, 1
     @max_gram_size = opts.fetch :max_gram_size, 6
+    @corpus_file = opts.fetch :corpus_file, '/usr/share/dict/words'
     puts "Minimum n-gram size set to #{@min_gram_size}"
     puts "Maximum n-gram size set to #{@max_gram_size}"
+    puts "Corpus file set to #{@corpus_file}"
   end
   
   def print_separator
@@ -53,7 +74,10 @@ class GeneratorBenchmark
   end
 end
 
-puts "USAGE: bin/benchmark max_gram_size\n" if ARGV.empty?
+if ARGV.empty?
+  puts "USAGE: bin/benchmark min_gram_size max_gram_size corpus_file\n" 
+end
 bm = GeneratorBenchmark.new(min_gram_size: ARGV[0].to_i,
-                            max_gram_size: ARGV[1].to_i)
+                            max_gram_size: ARGV[1].to_i,
+                            corpus_file: ARGV[2])
 bm.run
