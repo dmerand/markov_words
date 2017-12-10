@@ -1,0 +1,59 @@
+#!/usr/bin/env ruby
+# frozen-string-literal: true
+
+require 'benchmark'
+require 'bundler/setup'
+require 'markov_words'
+
+class GeneratorBenchmark
+  def run
+    test_if_desired 'initial setup time versus gram size' do
+      Benchmark.bm(6) do |x|
+        @min_gram_size.upto(@max_gram_size) do |size|
+          generator = MarkovWords::Generator.new(flush_data: true,
+                                                 gram_size: size)
+          x.report("size: #{size}") { generator.word }
+        end
+      end
+    end
+
+    test_if_desired 'word generation averages for 100 words per gram size' do
+      Benchmark.bm(6) do |x|
+        @min_gram_size.upto(@max_gram_size) do |size|
+          generator = MarkovWords::Generator.new(
+                        flush_data: true,
+                        gram_size: size,
+                        perform_caching: false
+                      )
+          _word = generator.word # this will run initial setup
+          x.report("size: #{size}") { 1.upto(100) { generator.word } }
+        end
+      end
+    end
+  end
+  
+  def initialize(opts)
+    @min_gram_size = opts.fetch :min_gram_size, 1
+    @max_gram_size = opts.fetch :max_gram_size, 6
+    puts "Minimum n-gram size set to #{@min_gram_size}"
+    puts "Maximum n-gram size set to #{@max_gram_size}"
+  end
+  
+  def print_separator
+    printf "%s\n", 60.times.map { '-' }.join
+  end
+
+  def test_if_desired(description, &block)
+    printf "\n%s", "Test #{description}? (y/n) "
+    if /y/.match?($stdin.readline)
+      print_separator
+      yield(block) 
+      print_separator
+    end
+  end
+end
+
+puts "USAGE: bin/benchmark max_gram_size\n" if ARGV.empty?
+bm = GeneratorBenchmark.new(min_gram_size: ARGV[0].to_i,
+                            max_gram_size: ARGV[1].to_i)
+bm.run
