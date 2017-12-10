@@ -5,13 +5,14 @@ require 'benchmark'
 require 'bundler/setup'
 require 'markov_words'
 
+# Utility class to generate benchmarks for MarkovWords
 class GeneratorBenchmark
   LABEL_WIDTH = 7
   def run
     test_if_desired 'initial database creation time versus gram size' do
       Benchmark.bm(LABEL_WIDTH) do |x|
         @min_gram_size.upto(@max_gram_size) do |size|
-          generator = 
+          generator =
             MarkovWords::Generator.new(flush_data: true,
                                        gram_size: size,
                                        corpus_file: @corpus_file)
@@ -23,12 +24,12 @@ class GeneratorBenchmark
     test_if_desired 'existing database on disk, initial memory load' do
       Benchmark.bm(LABEL_WIDTH) do |x|
         @min_gram_size.upto(@max_gram_size) do |size|
-          generator = 
+          generator =
             MarkovWords::Generator.new(flush_data: true,
                                        gram_size: size,
                                        corpus_file: @corpus_file)
           _word = generator.word # this will run initial setup
-          generator_load_data_from_file = 
+          generator_load_data_from_file =
             MarkovWords::Generator.new(gram_size: size,
                                        corpus_file: @corpus_file)
           x.report("size: #{size}") { generator_load_data_from_file.word }
@@ -39,7 +40,7 @@ class GeneratorBenchmark
     test_if_desired 'word generation averages for 100 words per gram size' do
       Benchmark.bm(LABEL_WIDTH) do |x|
         @min_gram_size.upto(@max_gram_size) do |size|
-          generator = 
+          generator =
             MarkovWords::Generator.new(flush_data: true,
                                        gram_size: size,
                                        perform_caching: false,
@@ -50,7 +51,7 @@ class GeneratorBenchmark
       end
     end
   end
-  
+
   def initialize(opts)
     @min_gram_size = opts.fetch :min_gram_size, 1
     @max_gram_size = opts.fetch :max_gram_size, 6
@@ -59,23 +60,23 @@ class GeneratorBenchmark
     puts "Maximum n-gram size set to #{@max_gram_size}"
     puts "Corpus file set to #{@corpus_file}"
   end
-  
+
   def print_separator
-    printf "%s\n", 60.times.map { '-' }.join
+    printf "%s\n", Array.new(60).map { '-' }.join
   end
 
   def test_if_desired(description, &block)
     printf "\n%s", "Test #{description}? (y/n) "
     if /y/.match?($stdin.readline)
       print_separator
-      yield(block) 
+      yield(block)
       print_separator
     end
   end
 end
 
 if ARGV.empty?
-  puts "USAGE: bin/benchmark min_gram_size max_gram_size corpus_file\n" 
+  puts "USAGE: bin/benchmark min_gram_size max_gram_size corpus_file\n"
 end
 bm = GeneratorBenchmark.new(min_gram_size: ARGV[0].to_i,
                             max_gram_size: ARGV[1].to_i,

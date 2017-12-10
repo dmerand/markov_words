@@ -5,8 +5,8 @@ module MarkovWords
   # a `FileStore` object.
   class Generator
     # It's useful to be able to access the data store object directly, for
-    #   example if you were to want to implement storage of related metadata into
-    #   the same storage system that holds the database.
+    #   example if you were to want to implement storage of related metadata
+    #   into the same storage system that holds the database.
     attr_reader :data_store
 
     # The current database of n-gram mappings
