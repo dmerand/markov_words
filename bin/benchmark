@@ -5,80 +5,84 @@ require 'benchmark'
 require 'bundler/setup'
 require 'markov_words'
 
-# Utility class to generate benchmarks for MarkovWords
-class GeneratorBenchmark
-  LABEL_WIDTH = 7
-  def run
-    test_if_desired 'initial database creation time versus gram size' do
-      Benchmark.bm(LABEL_WIDTH) do |x|
-        @min_gram_size.upto(@max_gram_size) do |size|
-          generator =
-            MarkovWords::Generator.new(flush_data: true,
-                                       gram_size: size,
-                                       corpus_file: @corpus_file)
-          x.report("size: #{size}") { generator.word }
-        end
-      end
-    end
-
-    test_if_desired 'existing database on disk, initial memory load' do
-      Benchmark.bm(LABEL_WIDTH) do |x|
-        @min_gram_size.upto(@max_gram_size) do |size|
-          generator =
-            MarkovWords::Generator.new(flush_data: true,
-                                       gram_size: size,
-                                       corpus_file: @corpus_file)
-          _word = generator.word # this will run initial setup
-          generator_load_data_from_file =
-            MarkovWords::Generator.new(gram_size: size,
-                                       corpus_file: @corpus_file)
-          x.report("size: #{size}") { generator_load_data_from_file.word }
-        end
-      end
-    end
-
-    test_if_desired 'word generation averages for 100 words per gram size' do
-      Benchmark.bm(LABEL_WIDTH) do |x|
-        @min_gram_size.upto(@max_gram_size) do |size|
-          generator =
-            MarkovWords::Generator.new(flush_data: true,
-                                       gram_size: size,
-                                       perform_caching: false,
-                                       corpus_file: @corpus_file)
-          _word = generator.word # this will run initial setup
-          x.report("size: #{size}") { 1.upto(100) { generator.word } }
-        end
-      end
-    end
-  end
-
-  def initialize(opts)
-    @min_gram_size = opts.fetch :min_gram_size, 1
-    @max_gram_size = opts.fetch :max_gram_size, 6
-    @corpus_file = opts.fetch :corpus_file, '/usr/share/dict/words'
-    puts "Minimum n-gram size set to #{@min_gram_size}"
-    puts "Maximum n-gram size set to #{@max_gram_size}"
-    puts "Corpus file set to #{@corpus_file}"
-  end
-
-  def print_separator
-    printf "%s\n", Array.new(60).map { '-' }.join
-  end
-
-  def test_if_desired(description, &block)
-    printf "\n%s", "Test #{description}? (y/n) "
-    if /y/.match?($stdin.readline)
-      print_separator
-      yield(block)
-      print_separator
-    end
-  end
-end
-
 if ARGV.empty?
-  puts "USAGE: bin/benchmark min_gram_size max_gram_size corpus_file\n"
+  puts 'USAGE: bin/benchmark min_gram_size max_gram_size corpus_file'
+  puts 'EXAMPLE: bin/benchmark 2 6 /usr/share/dict/words'
 end
-bm = GeneratorBenchmark.new(min_gram_size: ARGV[0].to_i,
-                            max_gram_size: ARGV[1].to_i,
-                            corpus_file: ARGV[2])
-bm.run
+
+@min_gram_size = ARGV[0].to_i || 1
+@max_gram_size = ARGV[1].to_i || 6
+@corpus_file = ARGV[2] || '/usr/share/dict/words'
+@label_width = 7
+
+puts "Minimum n-gram size set to #{@min_gram_size}"
+puts "Maximum n-gram size set to #{@max_gram_size}"
+puts "Corpus file set to #{@corpus_file}"
+
+def print_separator
+  printf "%s\n", Array.new(70).map { '-' }.join
+end
+
+def test_if_desired(description, **opts)
+  printf "\n%s", "Test #{description}? (y/n) "
+  if /y/.match?($stdin.readline)
+    print_separator
+    if opts.fetch :benchmark, true
+      Benchmark.bm(@label_width) do |report|
+        @min_gram_size.upto(@max_gram_size) do |size|
+          yield(report, size) if block_given?
+        end
+      end
+    else
+      @min_gram_size.upto(@max_gram_size) do |size|
+        yield(size) if block_given?
+      end
+    end
+    print_separator
+  end
+end
+
+def new_generator(**opts)
+  opts = {
+    flush_data: true,
+    corpus_file: @corpus_file
+  }.merge(opts)
+
+  generator = MarkovWords::Generator.new(opts)
+  _word = generator.word if opts.fetch(:pre_seed, false)
+
+  generator
+end
+
+report_name = 'initial database creation time versus gram size'
+test_if_desired report_name do |report, size|
+  generator = new_generator(gram_size: size)
+  report.report("size: #{size}") { generator.word }
+end
+
+report_name = 'existing database on disk, initial memory load'
+test_if_desired report_name do |report, size|
+  new_generator(pre_seed: true, gram_size: size)
+  generator_existing_db = new_generator(flush_data: false, gram_size: size)
+  report.report("size: #{size}") { generator_existing_db.word }
+end
+
+report_name = 'word generation averages for 100 words per gram size'
+test_if_desired report_name do |report, size|
+  generator = new_generator(pre_seed: true, gram_size: size)
+  report.report("size: #{size}") { 1.upto(100) { generator.word } }
+end
+
+test_if_desired 'word uniqueness per gram size', benchmark: false do |size|
+  generator = new_generator(gram_size: size)
+  num_words = 6000
+  seen_words = {}
+
+  num_words.times do
+    word = generator.word
+    seen_words[word].nil? ? seen_words[word] = 0 : seen_words[word] += 1
+  end
+  num_dupes = seen_words.find_all{ |_key, val| val > 1 }.length
+
+  puts "n-gram size: #{size}, #{num_dupes}/#{num_words} words were duplicates."
+end
