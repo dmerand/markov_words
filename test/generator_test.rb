@@ -17,15 +17,15 @@ class GeneratorTest < Minitest::Test
   end
 
   def test_returns_a_word
-    words = get_words
-    assert words.word
+    generator = get_generator
+    assert generator.word
   end
 
   def test_minimum_word_length
     min_length = 5
-    words = get_words(min_length: min_length)
+    generator = get_generator(min_length: min_length)
     num_iterations.times do
-      word = words.word
+      word = generator.word
       assert word.length >= min_length,
              %(word: "#{word}" is #{word.length} long,) +
              " should be >= #{min_length}."
@@ -34,9 +34,9 @@ class GeneratorTest < Minitest::Test
 
   def test_maximum_word_length
     max_length = 5
-    words = get_words(max_length: max_length)
+    generator = get_generator(max_length: max_length)
     num_iterations.times do
-      word = words.word
+      word = generator.word
       assert word.length <= max_length,
              %(word: "#{word}" is #{word.length} long,) +
              " should be <= #{max_length}."
@@ -44,8 +44,15 @@ class GeneratorTest < Minitest::Test
   end
 
   def test_changing_gram_size_still_returns_words
-    words = get_words(gram_size: 2)
-    assert words.word
+    generator = get_generator(gram_size: 2)
+    assert generator.word
+  end
+
+  def test_setting_and_retrieving_from_data_store
+    generator = get_generator
+    test_data = {cool: 'beans'}
+    generator.data_store.store_data :test, test_data
+    assert_equal generator.data_store.retrieve_data(:test), test_data
   end
 
   private
@@ -57,7 +64,7 @@ class GeneratorTest < Minitest::Test
 
   # Keep the n-gram size down for testing, because computation is faster that
   # way. We also don't want caching by default (that gets tested specifically).
-  def get_words(opts = {})
+  def get_generator(opts = {})
     MarkovWords::Generator.new({
       corpus_file: 'test/dictionary',
       data_file: 'tmp/test.data',
