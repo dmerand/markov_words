@@ -1,26 +1,27 @@
 # frozen-string-literal: true
 
 module MarkovWords
-  # This class takes care of word generation, caching, and data storage.
+  # This class takes care of word generation, and will store the database into
+  # a `FileStore` object.
   class Generator
-    # The current list of cached words.
-    # @return [Array<String>] All words in the cache.
-    def cache
-      @data_store.retrieve_data(:cache)
-    end
+    # It's useful to be able to access the data store object directly, for
+    #   example if you were to want to implement storage of related metadata into
+    #   the same storage system that holds the database.
+    attr_reader :data_store
 
     # The current database of n-gram mappings
     # @return [Hash] n-gram database
     def grams
-      @grams = @grams ||
-               @data_store.retrieve_data(:grams) ||
-               markov_corpus(@corpus_file, @gram_size)
+      if @grams.nil?
+        @grams = @data_store.retrieve_data(:grams) ||
+                 markov_corpus(@corpus_file, @gram_size)
+      else
+        @grams
+      end
     end
 
     # Create a new "Words" object
     # @param opts [Hash]
-    # @option opts [Integer] :cache_size How many words to pre-calculate +
-    #   store in the cache for quick retrieval
     # @option opts [String] :corpus_file ('/usr/share/dict/words') Your
     #   dictionary of words.
     # @option opts [String] :data_file Location where calculations are
@@ -34,7 +35,6 @@ module MarkovWords
     #   NOTE: If your corpus size is very small (<1000 words or so), it's hard
     #   to guarantee a min_length because so many n-grams will have no
     #   association, which terminates word generation.
-    # @option opts [Boolean] :perform_caching (true) Perform caching?
     # @return [Words] A `MarkovWords::Generator` object.
     def initialize(opts = {})
       @grams = nil
@@ -42,33 +42,13 @@ module MarkovWords
       @max_length = opts.fetch :max_length, 16
       @min_length = opts.fetch :min_length, 3
 
-      initialize_cache(opts)
       initialize_data(opts)
     end
 
-    # "Top off" the cache of stored words, and ensure that it's at
-    # `@cache_size`. If `perform_caching` is set to `false`, returns an empty
-    # array.
-    # @return [Array<String>] All words in the cache.
-    def refresh_cache
-      if @perform_caching
-        words_array = @data_store.retrieve_data(:cache) || []
-        words_array << generate_word while words_array.length < @cache_size
-        @data_store.store_data(:cache, words_array)
-        words_array
-      else
-        []
-      end
-    end
-
-    # Generate a new word, or return one from the cache if available.
+    # Generate a new word
     # @return [String] The word.
     def word
-      if @perform_caching
-        load_word_from_cache
-      else
-        generate_word
-      end
+      generate_word
     end
 
     private
@@ -79,11 +59,6 @@ module MarkovWords
       else
         ary.take(2).join.match(/[aeiou]/)
       end
-    end
-
-    def initialize_cache(opts)
-      @cache_size = opts.fetch :cache_size, 100
-      @perform_caching = opts.fetch :perform_caching, true
     end
 
     def initialize_data(opts)
@@ -136,18 +111,6 @@ module MarkovWords
 
     def line_ending?(word)
       /[\r\n]/.match? word
-    end
-
-    def load_word_from_cache
-      words_array = @data_store.retrieve_data(:cache)
-      if words_array.nil? || words_array.empty?
-        words_array = Array.new(@cache_size) { generate_word }
-      end
-
-      word = words_array.pop
-      @data_store.store_data(:cache, words_array)
-
-      word
     end
 
     # Generate a MarkovWords corpus from a datafile, with a given size of

@@ -48,30 +48,6 @@ class GeneratorTest < Minitest::Test
     assert words.word
   end
 
-  def test_false_cache_has_no_cache_data
-    words = get_words(perform_caching: false)
-    # Cache won't generate until we ask for a word
-    _discard = words.word
-    assert_nil words.cache
-  end
-
-  def test_cache_size_param
-    cache_size = 10
-    words = get_words(perform_caching: true, cache_size: cache_size)
-    # Cache won't generate until we ask for a word
-    _discard = words.word
-    assert_equal words.cache.length, cache_size - 1
-  end
-
-  def test_cache_refresh
-    cache_size = 10
-    words = get_words(perform_caching: true, cache_size: cache_size)
-    # Cache won't generate until we ask for a word
-    (cache_size / 2).times { _discard = words.word }
-    words.refresh_cache
-    assert_equal words.cache.length, cache_size
-  end
-
   private
 
   def clear_test_data_files
