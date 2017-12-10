@@ -128,6 +128,7 @@ module MarkovWords
         end
       end
 
+      @data_store.store_data(:grams, grams)
       grams
     end
 
