@@ -50,7 +50,7 @@ class GeneratorTest < Minitest::Test
 
   def test_setting_and_retrieving_from_data_store
     generator = get_generator
-    test_data = {cool: 'beans'}
+    test_data = { cool: 'beans' }
     generator.data_store.store_data :test, test_data
     assert_equal generator.data_store.retrieve_data(:test), test_data
   end
