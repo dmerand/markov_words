@@ -44,7 +44,7 @@ class GeneratorTest < Minitest::Test
   end
 
   def test_changing_gram_size_still_returns_words
-    generator = get_generator(gram_size: 2)
+    generator = get_generator(gram_size: 3)
     assert generator.word
   end
 
@@ -68,12 +68,12 @@ class GeneratorTest < Minitest::Test
     MarkovWords::Generator.new({
       corpus_file: 'test/dictionary',
       data_file: 'tmp/test.data',
-      gram_size: 1,
+      gram_size: 2,
       perform_caching: false
     }.merge(opts))
   end
 
   def num_iterations
-    100
+    10000
   end
 end
