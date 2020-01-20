@@ -15,7 +15,7 @@ GEM
       method_source (~> 0.9.0)
     rake (10.5.0)
     sqlite3 (1.3.13)
-    yard (0.9.12)
+    yard (0.9.24)
 
 PLATFORMS
   ruby
@@ -29,4 +29,4 @@ DEPENDENCIES
   yard (~> 0.9.12)
 
 BUNDLED WITH
-   1.16.0
+   1.16.4
