@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.name = 'markov_words'
   spec.version = MarkovWords::VERSION
   spec.authors = ['Donald Merand']
-  spec.email = ['dmerand@explo.org']
+  spec.email = ['donald@merand.org']
 
   spec.summary = <<~SUMMARY
     Generate words (not sentences) using Markov-chain techniques.}
@@ -18,7 +18,7 @@ Gem::Specification.new do |spec|
     generators. This library uses Markov-chain techniques on words, as opposed
     to many others which focus on sentences.
   DESCRIPTION
-  spec.homepage = 'https://github.com/exploration/markov_words'
+  spec.homepage = 'https://github.com/dmerand/markov_words'
   spec.license = 'MIT'
 
   spec.files = `git ls-files -z`.split("\x0").reject do |f|
@@ -28,9 +28,9 @@ Gem::Specification.new do |spec|
   spec.executables = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ['lib']
 
-  spec.add_development_dependency 'bundler', '~> 1.16'
-  spec.add_development_dependency 'minitest', '~> 5.0'
-  spec.add_development_dependency 'pry', '~> 0.11'
+  spec.add_development_dependency 'bundler', '~> 2.1.4'
+  spec.add_development_dependency 'minitest', '~> 5.15'
+  spec.add_development_dependency 'pry', '~> 0.14.1'
   spec.add_development_dependency 'rake', '~> 13.0'
   spec.add_development_dependency 'yard', '~> 0.9.12'
 
