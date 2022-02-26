@@ -20,10 +20,10 @@ GEM
       webrick (~> 1.7.0)
 
 PLATFORMS
-  ruby
+  x86_64-linux
 
 DEPENDENCIES
-  bundler (~> 2.1.4)
+  bundler (>= 2.3.8)
   markov_words!
   minitest (~> 5.15)
   pry (~> 0.14.1)
@@ -31,4 +31,4 @@ DEPENDENCIES
   yard (~> 0.9.12)
 
 BUNDLED WITH
-   2.1.4
+   2.3.8
